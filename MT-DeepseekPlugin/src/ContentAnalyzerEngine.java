@@ -70,7 +70,6 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
                 return "请先在设置中填写 API Keys";
             }
 
-            // 完全使用 MT 管理器选择的模型
             String model = sourceLanguage;
             String systemPrompt = getSystemPrompt(targetLanguage);
             return makeApiRequest(api_token, systemPrompt, text, model);
@@ -81,7 +80,7 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
 
     private String getSystemPrompt(String targetLanguage) {
         switch (targetLanguage) {
-            case "translate": return "将以下内容翻译成中文。";
+            case "translate": return "下面的内容如若为非中文请翻译成中文，如若为中文请翻译成英文。";
             case "analysis": return "详细解释这段代码的功能与逻辑，用中文回答。";
             case "ai": return "请用中文回答用户。";
             default: return "";
