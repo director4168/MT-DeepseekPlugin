@@ -9,12 +9,10 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class ContentAnalyzerEngine extends BaseTranslationEngine {
-    // API接口
     private static final String API_URL = "https://api.deepseek.com/v1/chat/completions";
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private OkHttpClient client;
 
-    // 模型列表
     private static final Map<String, String> MODEL_DISPLAY_NAMES = new HashMap<>();
     static {
         MODEL_DISPLAY_NAMES.put("deepseek-v4-flash", "deepseek-v4-flash");
@@ -25,7 +23,6 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
         super(new ConfigurationBuilder()
                 .setAcceptTranslated(true)
                 .build());
-
         client = new OkHttpClient.Builder()
                 .connectTimeout(50, TimeUnit.SECONDS)
                 .readTimeout(50, TimeUnit.SECONDS)
@@ -65,25 +62,28 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
         try {
             SharedPreferences pref = getContext().getPreferences();
             String api_token = pref.getString("api_token", "");
-
             if (api_token.isEmpty()) {
                 return "请先在设置中填写 API Keys";
             }
-
             String model = sourceLanguage;
-            String systemPrompt = getSystemPrompt(targetLanguage);
+            String systemPrompt = getSystemPrompt(targetLanguage, pref);
             return makeApiRequest(api_token, systemPrompt, text, model);
         } catch (Exception e) {
             return "处理失败：" + e.getMessage();
         }
     }
 
-    private String getSystemPrompt(String targetLanguage) {
+    // 提示词
+    private String getSystemPrompt(String targetLanguage, SharedPreferences pref) {
         switch (targetLanguage) {
-            case "translate": return "下面的内容如若为非中文请翻译成中文，如若为中文请翻译成英文。";
-            case "analysis": return "详细解释这段代码的功能与逻辑，用中文回答。";
-            case "ai": return "请用中文回答用户。";
-            default: return "";
+            case "translate":
+                return pref.getString("prompt_translate", "下面的内容如若为非中文请翻译成中文，如若为中文请翻译成英文。");
+            case "analysis":
+                return pref.getString("prompt_analysis", "详细解释这段代码的功能与逻辑，用中文回答。");
+            case "ai":
+                return pref.getString("prompt_ai", "请用中文回答用户。");
+            default:
+                return "";
         }
     }
 
@@ -100,7 +100,6 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
                         .post(body)
                         .header("Authorization", "Bearer " + apiToken)
                         .build();
-
                 try (Response response = client.newCall(request).execute()) {
                     if (!response.isSuccessful()) {
                         throw new IOException("API请求失败，状态码：" + response.code());
@@ -124,7 +123,6 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
         JSONArray messages = new JSONArray();
         messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
         messages.put(new JSONObject().put("role", "user").put("content", userContent));
-
         requestBody.put("model", model);
         requestBody.put("messages", messages);
         requestBody.put("max_tokens", 3900);

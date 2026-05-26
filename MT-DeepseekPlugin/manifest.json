@@ -2,9 +2,9 @@
   "pluginSdkVersion": 2,
   "pluginID": "mtp.deepseek.ai.carter",
   "versionCode": 4,
-  "versionName": "v4.1.4",
+  "versionName": "v4.2.1",
   "name": "Deepseek",
   "description": "一款MT V2插件的AI插件。基于原deepseek插件（已下架，无法找到原作者），现由director_Carter开发",
   "interfaces": ["ContentAnalyzerEngine"],
-  "mainPreference": "bin.mt.plugin.SettingPreference"
+  "mainPreference": "bin.mt.plugin.Setting"
 }
