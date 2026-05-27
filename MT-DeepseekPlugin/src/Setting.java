@@ -39,7 +39,7 @@ public class Setting implements PluginPreference {
 
         builder.addHeader("介绍");
         builder.addText("关于")
-                .summary("插件SDK: V2\n基于原deepseek插件（已下架，且无法找到原作者）制作，现由director_Carter进行开发维护\n由于v2接口限制以及稳定性性考虑，目前仅有两个模型，且强制使用Deepseek API\n");
+                .summary("插件SDK: V2\n基于「deepseek」插件制作（原插件已下架，且无法找到原作者），现由director_Carter进行维护\n由于v2接口限制以及稳定性考虑，默认仅有两个模型，使用Deepseek API\n");
 
         builder.addText("API申请地址")
                 .summary("DeepSeek API Key申请地址：https://platform.deepseek.com/api_keys，直接点击本列表可跳转")
