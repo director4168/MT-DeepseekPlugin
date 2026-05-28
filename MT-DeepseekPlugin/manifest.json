@@ -1,10 +1,10 @@
 {
   "pluginSdkVersion": 2,
   "pluginID": "mtp.deepseek.ai.carter",
-  "versionCode": 433,
-  "versionName": "v4.3.3",
+  "versionCode": 435,
+  "versionName": "v4.3.5",
   "name": "Deepseek",
-  "description": "使用Deepseek的AI插件。基于「deepseek」插件制作，现由director_Carter维护\n不仅仅只能把一种语言翻译成另一种语言，更可以在设置中配置提示词，发挥ds的全部功能",
+  "description": "使用Deepseek的AI插件。基于「deepseek」插件制作，现由director_Carter维护\n不仅仅只能把一种语言翻译成另一种语言，更可以在设置中配置提示词，发挥ds的全部能力",
   "interfaces": ["ContentAnalyzerEngine"],
   "mainPreference": "bin.mt.plugin.Setting"
 }

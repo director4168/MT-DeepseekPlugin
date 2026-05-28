@@ -5,7 +5,7 @@
  * 开源地址中提供原始版本
  * 原插件已被下架，且原作者已未知，现在由『director_Carter』进行维护
  * 邮箱： 2705722903@qq.com
- */
+*/
 import android.content.SharedPreferences;
 import okhttp3.*;
 import bin.mt.plugin.api.translation.BaseTranslationEngine;
@@ -138,7 +138,7 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
 
                 try (Response response = client.newCall(request).execute()) {
                     if (!response.isSuccessful() || response.body() == null) {
-                        throw new IOException("API请求失败，状态码：" + response.code());
+                        throw new IOException("API请求失败，错误码：" + response.code());
                     }
                     String json = response.body().string();
                     JSONObject resp = new JSONObject(json);
@@ -185,12 +185,17 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
     private String buildTokenInfo(JSONObject usage) {
         if (usage == null) return "获取token消耗量失败";
 
-        int hit = usage.optInt("prompt_cache_hit_tokens", 0);
-        int miss = usage.optInt("prompt_cache_miss_tokens", 0);
+        int prompt = usage.optInt("prompt_tokens", 0);
         int out = usage.optInt("completion_tokens", 0);
         int total = usage.optInt("total_tokens", 0);
+        int cached = 0;
+        JSONObject details = usage.optJSONObject("prompt_tokens_details");
+        if (details != null) {
+            cached = details.optInt("cached_tokens", 0);
+        }
+        int noCache = prompt - cached;
 
-        return "Token消耗量: " + "输入命中：" + hit + " | " + "输入未命中：" + miss + " | " + "输出：" + out + " | " + "一共消耗：" + total;
+        return "Token消耗量: 输入命中：" + cached + " | 输入未命中：" + noCache + " | 输出：" + out + " | 本次共消耗：" + total;
     }
 
     // 获取余额
