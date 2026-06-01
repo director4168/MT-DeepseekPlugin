@@ -5,7 +5,7 @@
  * 开源地址中提供原始版本
  * 原插件已被下架，且原作者已未知，现在由『director_Carter』进行维护
  * 邮箱： 2705722903@qq.com
-*/
+ */
 import android.content.SharedPreferences;
 import okhttp3.*;
 import bin.mt.plugin.api.translation.BaseTranslationEngine;
@@ -19,26 +19,31 @@ import java.util.concurrent.TimeUnit;
 public class ContentAnalyzerEngine extends BaseTranslationEngine {
     // API接口
     private static final String API_URL = "https://api.deepseek.com/v1/chat/completions";
-    // 余额接口
+    // 余额获取接口
     private static final String BALANCE_API = "https://api.deepseek.com/user/balance";
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private static final int TIMEOUT_SECONDS = 50;
+    private static final int MAX_RETRIES = 2;
+    private static final int RETRY_DELAY_MS = 1500;
+
+    private static final Set<
+            String> SUPPORTED_TARGETS = new HashSet<>(Arrays.asList("ai", "analysis", "translate"));
+    private static final Set<String> SUPPORTED_MODELS = new HashSet<>(Arrays.asList(
+            // 可用模型列表，但是ds现在好像就支持这两个了，官方的，如果后面官方不更新的话，修改他俩也没啥用
+            "deepseek-v4-flash",
+            "deepseek-v4-pro"
+    ));
+
     private OkHttpClient client;
-
-    private static final Map<String, String> MODEL_DISPLAY_NAMES = new HashMap<>();
-
-    static {
-        MODEL_DISPLAY_NAMES.put("deepseek-v4-flash", "deepseek-v4-flash");
-        MODEL_DISPLAY_NAMES.put("deepseek-v4-pro", "deepseek-v4-pro");
-    }
 
     public ContentAnalyzerEngine() {
         super(new ConfigurationBuilder()
                 .setAcceptTranslated(true)
                 .build());
         client = new OkHttpClient.Builder()
-                .connectTimeout(50, TimeUnit.SECONDS)
-                .readTimeout(50, TimeUnit.SECONDS)
-                .writeTimeout(50, TimeUnit.SECONDS)
+                .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build();
     }
 
@@ -49,7 +54,7 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
 
     @Override
     public List<String> loadSourceLanguages() {
-        return new ArrayList<>(MODEL_DISPLAY_NAMES.keySet());
+        return new ArrayList<>(SUPPORTED_MODELS);
     }
 
     @Override
@@ -59,16 +64,21 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
 
     @Override
     public String getLanguageDisplayName(String language) {
-        if (language.equals("ai")) return "智能AI";
-        if (language.equals("analysis")) return "代码分析";
-        if (language.equals("translate")) return "翻译内容";
-        String displayName = MODEL_DISPLAY_NAMES.get(language);
-        return displayName != null ? displayName : "未知";
+        switch (language) {
+            case "ai":
+                return "智能AI";
+            case "analysis":
+                return "代码分析";
+            case "translate":
+                return "翻译内容";
+            default:
+                return SUPPORTED_MODELS.contains(language) ? language : "未知";
+        }
     }
 
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage) {
-        if (!targetLanguage.equals("ai") && !targetLanguage.equals("analysis") && !targetLanguage.equals("translate")) {
+        if (!SUPPORTED_TARGETS.contains(targetLanguage)) {
             return "不支持的目标语言";
         }
         try {
@@ -80,11 +90,9 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
             String model = sourceLanguage;
             String systemPrompt = getSystemPrompt(targetLanguage, pref);
 
-            // 获取结构
             JSONObject fullResp = makeApiRequestWithUsage(api_token, systemPrompt, text, model);
             String result = fullResp.optString("content", "未获取到有效回答");
 
-            // 显示token消耗量
             boolean showToken = pref.getBoolean("show_token_usage", false);
             if (showToken) {
                 String tokenInfo = buildTokenInfo(fullResp.optJSONObject("usage"));
@@ -93,7 +101,6 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
                 }
             }
 
-            // 显示余额
             boolean showBalance = pref.getBoolean("show_balance", false);
             if (showBalance) {
                 String balanceInfo = getBalanceString(api_token);
@@ -121,12 +128,10 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
         }
     }
 
-    // 返回的请求
     private JSONObject makeApiRequestWithUsage(String apiToken, String systemPrompt, String userContent, String model)
             throws JSONException, IOException {
-        int maxRetries = 2;
         int retryCount = 0;
-        while (retryCount < maxRetries) {
+        while (retryCount < MAX_RETRIES) {
             try {
                 JSONObject requestBody = buildRequestBody(systemPrompt, userContent, model);
                 RequestBody body = RequestBody.create(JSON, requestBody.toString());
@@ -150,9 +155,9 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
                 }
             } catch (IOException e) {
                 retryCount++;
-                if (retryCount >= maxRetries) throw e;
+                if (retryCount >= MAX_RETRIES) throw e;
                 try {
-                    Thread.sleep(1500);
+                    Thread.sleep(RETRY_DELAY_MS);
                 } catch (InterruptedException ignored) {
                 }
             }
@@ -198,7 +203,6 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
         return "Token消耗量: 输入命中：" + cached + " | 输入未命中：" + noCache + " | 输出：" + out + " | 本次共消耗：" + total;
     }
 
-    // 获取余额
     private String getBalanceString(String apiToken) {
         try {
             Request request = new Request.Builder()
@@ -215,11 +219,10 @@ public class ContentAnalyzerEngine extends BaseTranslationEngine {
                 return parseBalance(response.body().string());
             }
         } catch (Exception e) {
-            return null;
+            return "余额：获取失败";
         }
     }
 
-    // 解析余额
     private String parseBalance(String json) {
         try {
             JSONObject obj = new JSONObject(json);
