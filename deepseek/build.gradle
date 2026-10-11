@@ -1,0 +1,79 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.mt.plugin)
+}
+
+tasks.configureEach { task ->
+    if (task.name.contains("lint")) {
+        task.enabled = false
+    }
+}
+
+tasks.configureEach { task ->
+    if (task.name ==~ /merge.*Assets/) {
+        task.doLast {
+            def egg = file("src/main/assets/.Egg.txt")
+            if (!egg.exists()) return
+            def outDir
+            try {
+                outDir = task.outputDir.get().asFile
+            } catch (Exception ignored) {
+                return
+            }
+            if (outDir != null && outDir.isDirectory()) {
+                new File(outDir, ".Egg.txt").bytes = egg.bytes
+            }
+        }
+    }
+}
+
+
+def javaVersion = JavaVersion.VERSION_17
+
+android {
+    namespace = 'bin.mt.plugin.pusher'
+    compileSdk = 36
+
+    defaultConfig {
+        targetSdk = 28
+        minSdk = 21
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility javaVersion
+        targetCompatibility javaVersion
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring libs.desugar.jdk.libs
+}
+
+mtPlugin {
+    pushTarget = "bin.mt.plus"
+
+    pluginID = "mtp.deepseek.ai.carter"
+
+    versionCode = 440016
+
+    versionName = "v4.4.1"
+
+    name = "Deepseek"
+
+    description = "使用Deepseek的AI插件。基于「deepseek」插件制作，现由director_Carter维护\n不仅仅只能把一种语言翻译成另一种语言，更可以在设置中配置提示词，发挥ds的全部能力"
+
+
+    mainPreference = "bin.mt.plugin.Setting"
+
+    interfaces = [
+            "bin.mt.plugin.ContentAnalyzerEngine",
+    ]
+}

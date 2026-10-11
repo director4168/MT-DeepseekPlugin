@@ -1,0 +1,28 @@
+pluginManagement {
+    repositories {
+        maven {
+            url 'https://maven.aliyun.com/repository/google/'
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url = 'https://maven.mt2.cn' }
+        mavenLocal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/google/' }
+        mavenCentral()
+        maven { url = 'https://maven.mt2.cn' }
+        mavenLocal()
+    }
+}
+
+rootProject.name = "MT-DeepseekPlugin"
+include ':deepseek'
